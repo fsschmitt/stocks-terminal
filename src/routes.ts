@@ -7,12 +7,12 @@ import * as stockService from './datasources/yahoo';
 module.exports = (app: any) => {
     app.get('/:tickers', async (req : Request, res : Response) => {
         const responseType = getResponseType(req);
-        console.log(`Format type: ${ResponseType[responseType]}`)
         const tickers = req.params.tickers.split(',').map((ticker: string) => ticker.trim());
 
         const stocks: Stock[] = [];
         for (let i = 0; i < tickers.length; i++) {
             const ticker = tickers[i];
+            console.info(`Fetching data for ticker: ${ticker}...`);
             stocks.push(await stockService.fetchData(ticker));
         }
 
@@ -22,16 +22,16 @@ module.exports = (app: any) => {
 }
 
 const getResponseType = (req: Request): ResponseType => {
-    if (req.query['format'] === "json" || req.is('application/json')) {
-        return ResponseType.json;
-    }
-    else if (req.query['format'] === "yaml" || req.is('application/yaml')) {
+    if (req.query['format'] === "yaml" || req.is('application/yaml')) {
         return ResponseType.yaml;
     }
     else if (req.query['format'] === "table" || req.is('application/table')) {
         return ResponseType.table;
     }
-    else {
+    else if (req.query['format'] === "text" || req.is('application/text')) {
         return ResponseType.text;
+    }
+    else {
+        return ResponseType.json;
     }
 }

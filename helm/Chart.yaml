@@ -1,0 +1,6 @@
+apiVersion: v2
+name: stocks
+description: A service to provide stocks information on as an API through (JSON, YAML or Terminal Table)
+type: application
+version: 0.1.0
+appVersion: "0.0.1"

@@ -45,10 +45,7 @@ const buildTable = (responseObj: any) => {
 }
 
 const setColor = (str: string): string => {
-    console.log(`checking ${str}`);
-    // Percentage
     if (str.includes('%') && !isNaN(Number(str.split('%')[0]))) {
-        console.log(`${str} is a percentage`);
         return (Number(str.split('%')[0]) > 0.0) ? colors.green(str) : colors.red(str);
     }
     return colors.cyan(str);

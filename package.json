@@ -2,9 +2,11 @@
   "name": "stocks",
   "version": "0.0.1",
   "description": "A service to provide stocks information on as an API through (JSON, YAML or Terminal Table)",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
-    "watch": "nodemon"
+    "watch": "nodemon",
+    "build": "tsc",
+    "start": "node ./dist/index.js"
   },
   "repository": "https://github.com/fsschmitt/stocks",
   "author": "Felipe Schmitt <492108+fsschmitt@users.noreply.github.com>",
