@@ -82,7 +82,7 @@ const getStockInfo = (quoteData: object, ticker: string): Stock => {
     name: parseName(quoteData, "shortName"),
     price: parseValue(quoteData, "regularMarketPrice"),
     change: parseValue(quoteData, "regularMarketChange"),
-    changePercentage: parseValue(quoteData, "regularMarketChangePercent") + "%",
+    changePercentage: parseValue(quoteData, "regularMarketChangePercent").toFixed(2) + "%",
     date: parseDate(quoteData, "regularMarketTime"),
     time: parseTime(quoteData, "regularMarketTime"),
     dayLow: parseValue(quoteData, "regularMarketDayRange").split("-")[0].trim(),
