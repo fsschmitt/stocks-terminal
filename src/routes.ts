@@ -11,7 +11,7 @@ module.exports = (app: any) => {
         const results = tickers.map(ticker => stockService.fetchData(ticker));
         const stocks: Stock[] = await Promise.all(results);
         let response = buildResponse(stocks, responseType);
-        res.send(response);
+        res.send(response + '\n');
     });
 }
 

@@ -92,5 +92,9 @@ const getStockInfo = (quoteData: object, ticker: string): Stock => {
     week52High: parseValue(quoteData, "fiftyTwoWeekRange").split("-")[1].trim(),
   };
 
+  stock.toString = function() {
+    return `${this.ticker}: ${this.price} (${this.changePercentage})`
+  }
+
   return stock;
 };

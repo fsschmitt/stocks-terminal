@@ -3,7 +3,9 @@ import yaml from 'js-yaml';
 import Table from "cli-table3";
 import colors from "colors";
 
-export const buildResponse = (responseObj: any, responseType: ResponseType): any => {
+const unallowedValues = ['function', 'object'];
+
+export const buildResponse = (responseObj: any[], responseType: ResponseType): any => {
     switch (responseType) {
         case ResponseType.json:
             return responseObj;
@@ -12,7 +14,7 @@ export const buildResponse = (responseObj: any, responseType: ResponseType): any
         case ResponseType.table:
             return buildTable(responseObj);
         case ResponseType.text:
-            return `Response: ${JSON.stringify(responseObj)}`;
+            return responseObj.join(' ');
         default:
             return responseObj;
     }
@@ -20,7 +22,7 @@ export const buildResponse = (responseObj: any, responseType: ResponseType): any
 
 const buildHeader = (row: any): string[] => {
     let head: string[] = [];
-    Object.keys(row).forEach(key => {
+    Object.keys(row).filter(key => !unallowedValues.includes(typeof row[key])).forEach(key => {
         var tmp = key.replace( /([A-Z])/g, " $1" );
         var headerName = tmp.charAt(0).toUpperCase() + tmp.slice(1);
         head.push(colors.dim(headerName));
@@ -39,7 +41,7 @@ const buildTable = (responseObj: any) => {
     });
     responseArr.forEach(obj => {
         let values: string[] = Object.values(obj);
-        table.push(values.map(v => setColor(v)));
+        table.push(values.filter(v => !unallowedValues.includes(typeof v)).map(v => setColor(v)));
     });
     return table.toString();
 }
