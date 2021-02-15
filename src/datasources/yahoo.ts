@@ -14,7 +14,7 @@ const getStoreJson = (storeScript: any): any => {
   });
   let json;
   Recast.visit(ast, {
-    visitObjectExpression: async function (node) {
+    visitObjectExpression: async function (node: any) {
       if (node.parent.value.left?.property.name === "main") {
         json = JSON.parse(Recast.print(node.value).code);
 
@@ -27,8 +27,9 @@ const getStoreJson = (storeScript: any): any => {
   return json;
 };
 
-export const fetchData = async (ticker: string): Promise<Stock> => {
-  return await axios.get(yahooUrl + ticker).then(
+export const fetchData = async (tickers: string[]): Promise<Stock[]> => {
+  const remoteUrl = encodeURI(yahooUrl + tickers.join(","));
+  return await axios.get(remoteUrl).then(
     async (response: AxiosResponse) => {
       const html = parse(response.data);
 
@@ -41,19 +42,23 @@ export const fetchData = async (ticker: string): Promise<Stock> => {
 
       // Parse js to get store value
       const json = getStoreJson(storeScript);
+      const stocks: Stock[] = [];
+      console.log(JSON.stringify(json.context.dispatcher.stores.StreamDataStore.quoteData));
+      tickers.forEach(ticker => {
+        const quoteData = json.context.dispatcher.stores.StreamDataStore.quoteData[ticker];
+        console.log(JSON.stringify(quoteData));
+        stocks.push(getStockInfo(quoteData, ticker));
+      });
       // Get ticker from store
-      const quoteData = json.context.dispatcher.stores.StreamDataStore.quoteData[ticker];
 
-      return getStockInfo(quoteData, ticker);
+      return stocks;
     },
   ).catch((error) => {
     console.error(
-      `An error has occured while fetching data about the ticker ${ticker}:`,
+      `An error has occured while fetching data about the tickers ${tickers}:`,
       error,
     );
-    return {
-      ticker,
-    };
+    return [];
   });
 };
 
