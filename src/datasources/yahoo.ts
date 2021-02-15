@@ -69,7 +69,7 @@ const parseName = (data: object, key: string): string => {
 
 const parseDate = (data: object, key: string): string => {
   //@ts-ignore
-  return new Date(data[key].fmt).toLocaleDateString();
+  return new Date(data[key].raw * 1000).toLocaleDateString();
 };
 
 const getStockInfo = (quoteData: object, ticker: string): Stock => {
