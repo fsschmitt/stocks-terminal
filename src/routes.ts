@@ -19,13 +19,11 @@ const getResponseType = (req: Request): ResponseType => {
     if (req.query['format'] === "yaml" || req.is('application/yaml')) {
         return ResponseType.yaml;
     }
-    else if (req.query['format'] === "table" || req.is('application/table')) {
-        return ResponseType.table;
-    }
-    else if (req.query['format'] === "text" || req.is('application/text')) {
+    if (req.query['format'] === "text" || req.is('application/text')) {
         return ResponseType.text;
     }
-    else {
+    if (req.query['format'] === "json" || req.is('application/json')) {
         return ResponseType.json;
     }
+    return ResponseType.table;
 }

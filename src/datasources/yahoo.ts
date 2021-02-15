@@ -71,6 +71,11 @@ const parseDate = (data: object, key: string): string => {
   return new Date(data[key].raw * 1000).toLocaleDateString();
 };
 
+const parseTime = (data: object, key: string): string => {
+  //@ts-ignore
+  return new Date(data[key].raw * 1000).toLocaleTimeString();
+};
+
 const getStockInfo = (quoteData: object, ticker: string): Stock => {
   let stock: Stock = {
     ticker,
@@ -79,7 +84,7 @@ const getStockInfo = (quoteData: object, ticker: string): Stock => {
     change: parseValue(quoteData, "regularMarketChange"),
     changePercentage: parseValue(quoteData, "regularMarketChangePercent") + "%",
     date: parseDate(quoteData, "regularMarketTime"),
-    time: parseValue(quoteData, "regularMarketTime"),
+    time: parseTime(quoteData, "regularMarketTime"),
     dayLow: parseValue(quoteData, "regularMarketDayRange").split("-")[0].trim(),
     dayHigh: parseValue(quoteData, "regularMarketDayRange").split("-")[1]
       .trim(),
