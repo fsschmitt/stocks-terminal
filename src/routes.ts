@@ -8,7 +8,8 @@ module.exports = (app: any) => {
     app.get('/:tickers', async (req : Request, res : Response) => {
         const responseType = getResponseType(req);
         const tickers = req.params.tickers.split(',').map((ticker: string) => ticker.trim());
-        const stocks: Stock[] = await stockService.fetchData(tickers);
+        const results = tickers.map(ticker => stockService.fetchData(ticker));
+        const stocks: Stock[] = await Promise.all(results);
         let response = buildResponse(stocks, responseType);
         res.send(response);
     });

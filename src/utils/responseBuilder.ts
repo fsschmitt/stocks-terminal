@@ -45,7 +45,7 @@ const buildTable = (responseObj: any) => {
 }
 
 const setColor = (str: string): string => {
-    if (str.includes('%') && !isNaN(Number(str.split('%')[0]))) {
+    if (String(str).includes('%') && !isNaN(Number(str.split('%')[0]))) {
         return (Number(str.split('%')[0]) > 0.0) ? colors.green(str) : colors.red(str);
     }
     return colors.cyan(str);

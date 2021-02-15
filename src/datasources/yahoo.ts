@@ -27,9 +27,8 @@ const getStoreJson = (storeScript: any): any => {
   return json;
 };
 
-export const fetchData = async (tickers: string[]): Promise<Stock[]> => {
-  const remoteUrl = encodeURI(yahooUrl + tickers.join(","));
-  return await axios.get(remoteUrl).then(
+export const fetchData = async (ticker: string): Promise<Stock> => {
+  return await axios.get(yahooUrl + ticker).then(
     async (response: AxiosResponse) => {
       const html = parse(response.data);
 
@@ -42,23 +41,18 @@ export const fetchData = async (tickers: string[]): Promise<Stock[]> => {
 
       // Parse js to get store value
       const json = getStoreJson(storeScript);
-      const stocks: Stock[] = [];
-      console.log(JSON.stringify(json.context.dispatcher.stores.StreamDataStore.quoteData));
-      tickers.forEach(ticker => {
-        const quoteData = json.context.dispatcher.stores.StreamDataStore.quoteData[ticker];
-        console.log(JSON.stringify(quoteData));
-        stocks.push(getStockInfo(quoteData, ticker));
-      });
+      const quoteData = json.context.dispatcher.stores.StreamDataStore.quoteData[ticker];
       // Get ticker from store
-
-      return stocks;
+      return getStockInfo(quoteData, ticker);
     },
   ).catch((error) => {
     console.error(
-      `An error has occured while fetching data about the tickers ${tickers}:`,
+      `An error has occured while fetching data about the tickers ${ticker}:`,
       error,
     );
-    return [];
+    return {
+      ticker,
+    };
   });
 };
 
@@ -83,7 +77,7 @@ const getStockInfo = (quoteData: object, ticker: string): Stock => {
     name: parseName(quoteData, "shortName"),
     price: parseValue(quoteData, "regularMarketPrice"),
     change: parseValue(quoteData, "regularMarketChange"),
-    changePercentage: parseValue(quoteData, "regularMarketChangePercent"),
+    changePercentage: parseValue(quoteData, "regularMarketChangePercent") + "%",
     date: parseDate(quoteData, "regularMarketTime"),
     time: parseValue(quoteData, "regularMarketTime"),
     dayLow: parseValue(quoteData, "regularMarketDayRange").split("-")[0].trim(),
