@@ -1,50 +1,100 @@
-import axios, { AxiosResponse } from 'axios';
-import { Stock } from '../types/stock';
+import axios, { AxiosResponse } from "axios";
+import { Stock } from "../types/stock";
+import { parse } from "node-html-parser";
+import { Parser } from "acorn";
+import * as Recast from "recast";
+import { writeFile } from "fs/promises";
 
-const yahooUrl = 'https://finance.yahoo.com/quote/';
+const yahooUrl = "https://finance.yahoo.com/quote/";
+
+const getStoreJson = (storeScript: any): any => {
+  const ast = Parser.parse(storeScript.rawText as string, {
+    ecmaVersion: "latest",
+    allowAwaitOutsideFunction: false,
+  });
+  let json;
+  Recast.visit(ast, {
+    visitObjectExpression: async function (node: any) {
+      if (node.parent.value.left?.property.name === "main") {
+        json = JSON.parse(Recast.print(node.value).code);
+
+        return false;
+      }
+      this.traverse(node);
+    },
+  });
+
+  return json;
+};
 
 export const fetchData = async (ticker: string): Promise<Stock> => {
-    return await axios.get(yahooUrl + ticker).then( (response: AxiosResponse) => {
-        return getStockInfo(response.data, ticker);
-    }).catch( error => {
-        console.error(`An error has occured while fetching data about the ticker ${ticker}:`, error);
-        return {
-            ticker
-        };
-    });
-}
+  return await axios.get(yahooUrl + ticker).then(
+    async (response: AxiosResponse) => {
+      const html = parse(response.data);
 
-const parseValue = (data: string, key: string): any => {
-    return data.split(key)[1].split("fmt\":\"")[1].split("\"")[0];
-}
+      // Find script that contains store
+      const storeScript = [...html.querySelectorAll("script")].find((node) => {
+        if (node.rawText.includes("root.App.main")) {
+          return node;
+        }
+      });
 
-const parseName = (data: string, key: string): string => {
-    return data.split(key)[1].split(":")[1].split(",")[0].replace(/"/g, '');
-}
+      // Parse js to get store value
+      const json = getStoreJson(storeScript);
+      const quoteData = json.context.dispatcher.stores.StreamDataStore.quoteData[ticker];
+      // Get ticker from store
+      return getStockInfo(quoteData, ticker);
+    },
+  ).catch((error) => {
+    console.error(
+      `An error has occured while fetching data about the tickers ${ticker}:`,
+      error,
+    );
+    return {
+      ticker,
+    };
+  });
+};
 
-const parseDate = (data: string, key: string): string => {
-    let d = new Date(0);
-    let seconds = Number.parseInt(data.split(key)[1].split(":{\"raw\":\"")[0].split(":{\"raw\":")[1].split("\"")[0].split(',')[0]);
-    d.setUTCSeconds(seconds);
-    return d.toLocaleDateString()
-}
+const parseValue = (data: object, key: string): any => {
+  //@ts-ignore
+  return data[key].raw;
+};
 
-const getStockInfo = (body: any, ticker: string): Stock => {
-    let stockInfo = body.split(`"${ticker}":{"sourceInterval"`)[1];
+const parseName = (data: object, key: string): string => {
+  //@ts-ignore
+  return data[key];
+};
 
-    let stock: Stock = {
-        ticker,
-        name: parseName(stockInfo, 'shortName'),
-        price: parseValue(stockInfo, 'regularMarketPrice'),
-        change: parseValue(stockInfo, 'regularMarketChange'),
-        changePercentage: parseValue(stockInfo, 'regularMarketChangePercent'),
-        date: parseDate(stockInfo, 'regularMarketTime'),
-        time: parseValue(stockInfo, 'regularMarketTime'),
-        dayLow: parseValue(stockInfo, 'regularMarketDayRange').split('-')[0].trim(),
-        dayHigh: parseValue(stockInfo, 'regularMarketDayRange').split('-')[1].trim(),
-        week52Low: parseValue(stockInfo, 'fiftyTwoWeekRange').split('-')[0].trim(),
-        week52High: parseValue(stockInfo, 'fiftyTwoWeekRange').split('-')[1].trim(),
-    }
+const parseDate = (data: object, key: string): string => {
+  //@ts-ignore
+  return new Date(data[key].raw * 1000).toLocaleDateString();
+};
 
-    return stock;
-}
+const parseTime = (data: object, key: string): string => {
+  //@ts-ignore
+  return new Date(data[key].raw * 1000).toLocaleTimeString();
+};
+
+const getStockInfo = (quoteData: object, ticker: string): Stock => {
+  let stock: Stock = {
+    ticker,
+    name: parseName(quoteData, "shortName"),
+    price: parseValue(quoteData, "regularMarketPrice"),
+    change: parseValue(quoteData, "regularMarketChange"),
+    changePercentage: parseValue(quoteData, "regularMarketChangePercent").toFixed(2) + "%",
+    date: parseDate(quoteData, "regularMarketTime"),
+    time: parseTime(quoteData, "regularMarketTime"),
+    dayLow: parseValue(quoteData, "regularMarketDayRange").split("-")[0].trim(),
+    dayHigh: parseValue(quoteData, "regularMarketDayRange").split("-")[1]
+      .trim(),
+    week52Low: parseValue(quoteData, "fiftyTwoWeekRange").split("-")[0].trim(),
+    week52High: parseValue(quoteData, "fiftyTwoWeekRange").split("-")[1].trim(),
+  };
+
+  stock.toString = function() {
+    return `${this.ticker}: ${this.price} (${this.changePercentage})`
+  }
+
+  return stock;
+};

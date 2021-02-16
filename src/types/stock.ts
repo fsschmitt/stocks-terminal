@@ -3,7 +3,7 @@ export interface Stock {
     name?: string,
     price?: number,
     change?: number,
-    changePercentage?: number,
+    changePercentage?: string,
     date?: string,
     time?: string,
     dayLow?: number,

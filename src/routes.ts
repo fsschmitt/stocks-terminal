@@ -8,16 +8,10 @@ module.exports = (app: any) => {
     app.get('/:tickers', async (req : Request, res : Response) => {
         const responseType = getResponseType(req);
         const tickers = req.params.tickers.split(',').map((ticker: string) => ticker.trim());
-
-        const stocks: Stock[] = [];
-        for (let i = 0; i < tickers.length; i++) {
-            const ticker = tickers[i];
-            console.info(`Fetching data for ticker: ${ticker}...`);
-            stocks.push(await stockService.fetchData(ticker));
-        }
-
+        const results = tickers.map(ticker => stockService.fetchData(ticker));
+        const stocks: Stock[] = await Promise.all(results);
         let response = buildResponse(stocks, responseType);
-        res.send(response);
+        res.send(response + '\n');
     });
 }
 
@@ -25,13 +19,11 @@ const getResponseType = (req: Request): ResponseType => {
     if (req.query['format'] === "yaml" || req.is('application/yaml')) {
         return ResponseType.yaml;
     }
-    else if (req.query['format'] === "table" || req.is('application/table')) {
-        return ResponseType.table;
-    }
-    else if (req.query['format'] === "text" || req.is('application/text')) {
+    if (req.query['format'] === "text" || req.is('application/text')) {
         return ResponseType.text;
     }
-    else {
+    if (req.query['format'] === "json" || req.is('application/json')) {
         return ResponseType.json;
     }
+    return ResponseType.table;
 }
